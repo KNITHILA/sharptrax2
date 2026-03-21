@@ -1,5 +1,4 @@
 import { type FormEvent, useRef, useState, useEffect } from "react";
-import emailjs from "@emailjs/browser";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Variants } from "framer-motion";
 
@@ -25,7 +24,7 @@ export default function ContactPage() {
     else document.body.style.overflow = 'unset';
   }, [isMapOpen]);
 
-  // DIRECT BACKGROUND EMAIL SENDER (Using EmailJS to avoid spam & drafts)
+  // Email client redirect
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSending(true);
@@ -33,26 +32,33 @@ export default function ContactPage() {
 
     if (!formRef.current) return;
 
-    // This sends the email securely in the background "like a bot"
-    emailjs
-      .sendForm(
-        "service_67r7kfg", 
-        "template_xwnafxs", 
-        formRef.current,
-        "9bJ_hqjsB63RMeUH0" 
-      )
-      .then(() => {
+    try {
+      const formData = new FormData(formRef.current);
+      const name = formData.get("user_name") as string;
+      const email = formData.get("user_email") as string;
+      const phone = formData.get("user_phone") as string;
+      const details = formData.get("project_details") as string;
+
+      // Construct the email subject and body
+      const subject = encodeURIComponent(`New Machinery Enquiry from ${name}`);
+      const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nProject Requirements:\n${details}`);
+
+      // Trigger the default email client to open with the pre-filled data
+      window.location.href = `mailto:sharptrax@yahoo.com?subject=${subject}&body=${body}`;
+
+      // Simulate a quick success state to provide user feedback
+      setTimeout(() => {
         setSubmitStatus("success");
         formRef.current?.reset();
-        setTimeout(() => setSubmitStatus("idle"), 6000);
-      })
-      .catch((error) => {
-        console.error("EmailJS Error:", error);
-        setSubmitStatus("error");
-      })
-      .finally(() => {
         setIsSending(false);
-      });
+        setTimeout(() => setSubmitStatus("idle"), 6000);
+      }, 800);
+
+    } catch (error) {
+      console.error("Error formatting email:", error);
+      setSubmitStatus("error");
+      setIsSending(false);
+    }
   };
 
   // Google Maps Exact Location Embed URL for Sharptrax Technologies
@@ -125,7 +131,7 @@ export default function ContactPage() {
         >
           <iframe
             src={mapEmbedUrl}
-            className="absolute inset-0 w-full h-full grayscale opacity-60 pointer-events-none group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-[800ms]"
+            className="absolute inset-0 w-full h-full pointer-events-none group-hover:scale-105 transition-all duration-[800ms]"
             style={{ border: 0 }}
           ></iframe>
           
@@ -176,8 +182,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Phone Support</p>
-                <a href="tel:+919840389758" className="text-gray-900 text-sm font-bold hover:text-red-600 transition-colors block">
-                  +91 98403 89758
+                <a href="tel:+919840122149" className="text-gray-900 text-sm font-bold hover:text-red-600 transition-colors block">
+                  +91 98401 22149
                 </a>
               </div>
             </div>
@@ -266,7 +272,7 @@ export default function ContactPage() {
                 {isSending ? (
                   <>
                     <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    Processing...
+                    Opening Mail Client...
                   </>
                 ) : (
                   "Submit Enquiry"
@@ -280,7 +286,7 @@ export default function ContactPage() {
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                     <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
                   </div>
-                  <p className="text-green-800 text-xs font-bold">Thank you! Your enquiry has been sent securely directly to our team.</p>
+                  <p className="text-green-800 text-xs font-bold">Please complete sending the email from your mail client. Thank you!</p>
                 </motion.div>
               )}
               
@@ -289,7 +295,7 @@ export default function ContactPage() {
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                     <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </div>
-                  <p className="text-red-800 text-xs font-bold">Failed to send enquiry. Please check your connection and try again.</p>
+                  <p className="text-red-800 text-xs font-bold">Failed to open mail client. Please email us directly at sharptrax@yahoo.com.</p>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 
 export default function WhatsAppFloat() {
-  const phoneNumber = "919944432149";
+  const phoneNumber = "919840122149";
   const message =
     "Hello Sharptrax Technologies, I would like to enquire about your services.";
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
