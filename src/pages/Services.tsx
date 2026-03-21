@@ -607,10 +607,10 @@ export default function Services() {
       <div className="h-20 w-full bg-white border-b border-gray-200"></div>
 
       {/* --- HERO BANNER --- */}
-      {/* Lightened the dark slate color slightly for a softer touch */}
-      <div className="bg-[#54626F] py-16 px-6 border-b-4 border-yellow-500 relative overflow-hidden">
-        {/* Adjusted the subtle gradient overlay to match the newly softened background */}
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#3A4652] to-transparent opacity-50 pointer-events-none"></div>
+      {/* Reduced the dark slate color slightly as requested for a softer look */}
+      <div className="bg-[#444f5a] py-16 px-6 border-b-4 border-yellow-500 relative overflow-hidden">
+        {/* Adjusted gradient to seamlessly match the newly softened slate gray background */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#2c343f] to-transparent opacity-50 pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto flex flex-col relative z-10">
           <div className="flex items-center text-gray-100 text-sm mb-4 font-bold tracking-widest uppercase">

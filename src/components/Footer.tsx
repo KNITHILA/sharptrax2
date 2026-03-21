@@ -182,7 +182,7 @@ export default function Footer() {
               className="text-gray-600 leading-relaxed hover:underline block"
             >
               166, 11th Main Road, SIDCO Industrial Estate, Thirumudivakkam,
-              Chennai – 600040
+              Chennai –600 044
             </a>
             
             {/* Added the second number here */}
