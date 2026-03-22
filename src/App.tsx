@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Analytics } from "@vercel/analytics/next";
 import Location from "./pages/Location";
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
@@ -16,8 +15,6 @@ export default function App() {
     <BrowserRouter>
       <Navbar />
       <WhatsAppFloat />
-      <Analytics />
-
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about-us" element={<AboutUs />} />
