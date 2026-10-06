@@ -1,5 +1,7 @@
-import { useNavigate } from "react-router-dom";
+
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { serviceUrlByName } from "../lib/serviceUrls";
 
 // --- TYPESCRIPT INTERFACES ---
 interface Product {
@@ -374,7 +376,7 @@ const categories: Category[] = [
 ];
 
 export default function Gallery() {
-  const navigate = useNavigate();
+ 
 
   // Extract all images for the Image Gallery
   const allGalleryItems: GalleryItem[] = categories.flatMap((category) =>
@@ -401,11 +403,7 @@ export default function Gallery() {
   );
 
   // Navigation handler
-  const handleImageClick = (categoryId: string, productName: string) => {
-    // Navigates to the exact same URL structure the Navbar uses to open the specific machine
-    navigate(`/services?cat=${categoryId}&prod=${encodeURIComponent(productName)}`);
-    window.scrollTo(0, 0); 
-  };
+
 
   return (
     <div className="w-full min-h-screen bg-white pb-20 relative">
@@ -426,46 +424,47 @@ export default function Gallery() {
       {/* --- IMAGE GALLERY GRID --- */}
       <div className="w-full px-4 md:px-10 max-w-screen-2xl mx-auto mb-32">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
-          {allGalleryItems.map((item, index) => (
-            <motion.div 
+              {allGalleryItems.map((item, index) => (
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: index % 10 * 0.05 }} 
-              key={index} 
+              transition={{ duration: 0.4, delay: index % 10 * 0.05 }}
+              key={index}
               className="group flex flex-col cursor-pointer"
-              onClick={() => handleImageClick(item.categoryId, item.name)} 
             >
-              {/* Responsive Image Container */}
-              <div className="relative aspect-4/3 w-full overflow-hidden rounded-sm bg-gray-50 border border-gray-200 transition-all duration-500 group-hover:border-red-500/50 group-hover:shadow-xl">
-                <img
-                  src={item.url}
-                  alt={item.name}
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  loading="lazy"
-                />
-                
-                {/* Solid Color Overlay on Hover */}
-                <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors duration-300 flex flex-col items-center justify-center p-4">
-                  <span className="text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 font-bold tracking-widest text-xs border border-white/50 px-6 py-3 rounded-sm backdrop-blur-sm hover:bg-red-600 hover:border-red-600">
-                    VIEW SPECIFICATIONS
-                  </span>
-                </div>
-              </div>
+              <Link to={serviceUrlByName(item.name)} className="flex flex-col">
+                {/* Responsive Image Container */}
+                <div className="relative aspect-4/3 w-full overflow-hidden rounded-sm bg-gray-50 border border-gray-200 transition-all duration-500 group-hover:border-red-500/50 group-hover:shadow-xl">
+                  <img
+                    src={item.url}
+                    alt={item.name}
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    loading="lazy"
+                  />
 
-              {/* Text Label Section */}
-              <div className="mt-4 px-2">
-                <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-tight leading-tight transition-colors duration-300 group-hover:text-red-600 truncate">
-                  {item.name}
-                </h3>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="h-px w-4 bg-gray-300 group-hover:bg-red-500 transition-colors"></span>
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate">
-                    {item.categoryTitle}
-                  </span>
-                  <span className="h-px w-3 bg-gray-300 group-hover:bg-red-500 transition-colors"></span>
+                  {/* Solid Color Overlay on Hover */}
+                  <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors duration-300 flex flex-col items-center justify-center p-4">
+                    <span className="text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 font-bold tracking-widest text-xs border border-white/50 px-6 py-3 rounded-sm backdrop-blur-sm hover:bg-red-600 hover:border-red-600">
+                      VIEW SPECIFICATIONS
+                    </span>
+                  </div>
                 </div>
-              </div>
+
+                {/* Text Label Section */}
+                <div className="mt-4 px-2">
+                  <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-tight leading-tight transition-colors duration-300 group-hover:text-red-600 truncate">
+                    {item.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="h-px w-4 bg-gray-300 group-hover:bg-red-500 transition-colors"></span>
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate">
+                      {item.categoryTitle}
+                    </span>
+                    <span className="h-px w-3 bg-gray-300 group-hover:bg-red-500 transition-colors"></span>
+                  </div>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>

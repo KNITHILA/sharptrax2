@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import emailjs from "@emailjs/browser";
+import { Link } from "react-router-dom";
+import { serviceUrlByName } from "../lib/serviceUrls";
 
 // --- DATA ---
 const heroVideos = [
@@ -610,12 +612,13 @@ export default function App() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-            {solutions.map((item, index) => (
-              <a
-                href={`/services?cat=${item.categoryId}&prod=${encodeURIComponent(item.title)}`}
+                       {solutions.map((item, index) => (
+              <Link
+                to={serviceUrlByName(item.title)}
                 key={index}
                 className="group flex flex-col sm:flex-row items-center sm:items-stretch gap-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 hover:border-red-400 hover:shadow-xl transition-all duration-300 cursor-pointer block"
               >
+                {/* inner content unchanged */}
                 <div className="flex-1 flex flex-col justify-center text-center sm:text-left">
                   <h3 className="font-black text-xl text-gray-900 mb-3 group-hover:text-red-600 transition-colors uppercase tracking-tight">
                     {item.title}
@@ -635,7 +638,7 @@ export default function App() {
                     className="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
 

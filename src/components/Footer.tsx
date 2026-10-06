@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import emailjs from "@emailjs/browser";
+import { serviceUrlByName } from "../lib/serviceUrls";
 
 export default function Footer() {
   const [openForm, setOpenForm] = useState(false);
@@ -103,36 +105,36 @@ export default function Footer() {
                 Our Services
               </a>
             </h3>
-            <ul className="space-y-2 text-gray-600">
+                       <ul className="space-y-2 text-gray-600">
               <li>
-                <a href="/services?cat=welding-automation&prod=Robotic Automation">
+                <Link to={serviceUrlByName("Robotic Automation")}>
                   Robotic Welding
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/services?cat=welding-automation&prod=Plasma Transferred Arc Welding System">
+                <Link to={serviceUrlByName("Plasma Transferred Arc Welding System")}>
                   PTA Welding Systems
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/services?cat=welding-automation&prod=Welding Rotator">
+                <Link to={serviceUrlByName("Welding Rotator")}>
                   Welding Rotators
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/services?cat=welding-positioners&prod=Welding Positioners">
+                <Link to={serviceUrlByName("Welding Positioners")}>
                   Welding Positioners
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/services?cat=cnc-cutting&prod=Plasma CNC Machine">
+                <Link to={serviceUrlByName("Plasma CNC Machine")}>
                   CNC Cutting Machines
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/services?cat=welding-automation&prod=Port Welding Machine SPM">
+                <Link to={serviceUrlByName("Port Welding Machine SPM")}>
                   Special Purpose Machines
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

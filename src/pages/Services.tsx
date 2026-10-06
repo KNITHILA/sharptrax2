@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useLocation, useNavigate, useParams, Navigate } from "react-router-dom";
+import { useLocation, useParams, Navigate, Link } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Send, Zap, PlayCircle, ArrowRight, X, ChevronRight, Settings2 } from "lucide-react";
@@ -10,10 +10,8 @@ import {
   resolveLegacy,
   serviceUrl,
 } from "../lib/serviceUrls";
-
-interface RecommendedProduct extends Product {
-  categoryId: string;
-}
+import { buildSeo } from "../lib/seo";
+import { useSeo } from "../lib/useSeo";
 
 /* ------------------------------------------------------------------ */
 /* OUTER: decides WHICH machine to show (or where to redirect)         */
@@ -60,8 +58,11 @@ interface ServiceDetailProps {
 }
 
 function ServiceDetail({ product, category }: ServiceDetailProps) {
-  const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Per-page metadata + structured data (Phase 4)
+  const seo = useMemo(() => buildSeo(product, category), [product, category]);
+  useSeo(seo);
 
   const [activeImgIndex, setActiveImgIndex] = useState(0);
 
@@ -87,27 +88,20 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
   }, [product.slug]);
 
   // Related systems: same category (excluding current), fall back to Welding Automation
-  const recommendedProducts = useMemo<RecommendedProduct[]>(() => {
-    let recs: RecommendedProduct[] = category.products
-      .filter((p) => p.name !== product.name)
-      .map((p) => ({ ...p, categoryId: category.id }));
+  const recommendedProducts = useMemo<Product[]>(() => {
+    let recs: Product[] = category.products.filter((p) => p.name !== product.name);
 
     if (recs.length < 3) {
       const fallbackCat =
         categories.find((c) => c.id === "welding-automation") || categories[0];
-      const extraRecs = fallbackCat.products
-        .filter((p) => p.name !== product.name && !recs.find((r) => r.name === p.name))
-        .map((p) => ({ ...p, categoryId: fallbackCat.id }));
+      const extraRecs = fallbackCat.products.filter(
+        (p) => p.name !== product.name && !recs.find((r) => r.name === p.name)
+      );
       recs = [...recs, ...extraRecs];
     }
 
     return recs.slice(0, 3);
   }, [category, product]);
-
-  // Phase 2: Related cards still emit legacy URLs; the outer component redirects them.
-  const handleRecommendationClick = (categoryId: string, productName: string) => {
-    navigate(`/services?cat=${categoryId}&prod=${encodeURIComponent(productName)}`);
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -160,11 +154,11 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
 
         <div className="max-w-7xl mx-auto flex flex-col relative z-10">
           <div className="flex items-center text-gray-100 text-sm mb-4 font-bold tracking-widest uppercase">
-             <span className="hover:text-white cursor-pointer transition-colors" onClick={() => navigate("/")}>Home</span>
-             <ChevronRight size={14} className="mx-2" />
-             <span className="hover:text-white cursor-pointer transition-colors">Services</span>
-             <ChevronRight size={14} className="mx-2" />
-             <span className="text-yellow-400">{category.title}</span>
+            <Link to="/" className="hover:text-white cursor-pointer transition-colors">Home</Link>
+            <ChevronRight size={14} className="mx-2" />
+            <Link to="/services" className="hover:text-white cursor-pointer transition-colors">Services</Link>
+            <ChevronRight size={14} className="mx-2" />
+            <span className="text-yellow-400">{category.title}</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tight uppercase max-w-4xl">
             {product.name}
@@ -245,12 +239,12 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
 
             {/* System Overview */}
             <div className="mb-10">
-               <h3 className="text-2xl font-black text-gray-900 mb-4 pb-2 flex items-center gap-3 uppercase tracking-tight">
-                 <Settings2 className="text-red-600" size={28} /> System Overview
-               </h3>
-               <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                 {product.desc}
-               </p>
+              <h3 className="text-2xl font-black text-gray-900 mb-4 pb-2 flex items-center gap-3 uppercase tracking-tight">
+                <Settings2 className="text-red-600" size={28} /> System Overview
+              </h3>
+              <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                {product.desc}
+              </p>
             </div>
 
             {/* Key Features List */}
@@ -272,13 +266,13 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
 
             {/* Final CTA Button placed cleanly at the bottom */}
             <div className="mt-auto border-t border-gray-200 pt-8 pb-4">
-               <h4 className="text-lg font-bold text-gray-500 mb-4 uppercase tracking-widest text-center">Interested in this system?</h4>
-               <button
-                 onClick={() => setIsEnquiryModalOpen(true)}
-                 className="w-full py-5 rounded-xl font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 text-base bg-red-600 text-white hover:bg-red-700 hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-3"
-               >
-                 <Send size={20} /> Enquire Now
-               </button>
+              <h4 className="text-lg font-bold text-gray-500 mb-4 uppercase tracking-widest text-center">Interested in this system?</h4>
+              <button
+                onClick={() => setIsEnquiryModalOpen(true)}
+                className="w-full py-5 rounded-xl font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 text-base bg-red-600 text-white hover:bg-red-700 hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-3"
+              >
+                <Send size={20} /> Enquire Now
+              </button>
             </div>
 
           </div>
@@ -295,16 +289,19 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
                 Related Systems
               </h3>
             </div>
-            <span className="hidden md:flex text-sm font-bold text-red-600 cursor-pointer hover:text-red-700 transition-colors items-center gap-1" onClick={() => navigate("/gallery")}>
+            <Link
+              to="/gallery"
+              className="hidden md:flex text-sm font-bold text-red-600 cursor-pointer hover:text-red-700 transition-colors items-center gap-1"
+            >
               View Full Catalog <ArrowRight size={16}/>
-            </span>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {recommendedProducts.map((prod, idx) => (
-              <div
-                key={idx}
-                onClick={() => handleRecommendationClick(prod.categoryId, prod.name)}
+            {recommendedProducts.map((prod) => (
+              <Link
+                key={prod.slug}
+                to={serviceUrl(prod.slug)}
                 className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-xl hover:border-red-300 transition-all duration-300 flex flex-col"
               >
                 <div className="h-56 w-full bg-gray-50 flex items-center justify-center p-6 border-b border-gray-100">
@@ -323,7 +320,7 @@ function ServiceDetail({ product, category }: ServiceDetailProps) {
                     Explore Specifications <ArrowRight size={14} className="ml-2 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
