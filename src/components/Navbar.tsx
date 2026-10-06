@@ -106,9 +106,7 @@ export default function Navbar() {
                       {serviceCategories.find(c => c.id === activeDesktopCat)?.title} Systems
                     </h3>
                     
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                      {serviceCategories.find(c => c.id === activeDesktopCat)?.products.map(() => (
-                                          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                                      <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                       {serviceCategories.find(c => c.id === activeDesktopCat)?.products.map((prod) => (
                         <Link
                           key={prod.slug}
@@ -118,8 +116,6 @@ export default function Navbar() {
                         >
                           {prod.name}
                         </Link>
-                      ))}
-                    </div>
                       ))}
                     </div>
                   </div>

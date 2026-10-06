@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/prerender.mjs",
+   "build": "tsc -b && vite build && node scripts/prerender.mjs && node scripts/generate-seo-files.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "verify:catalog": "tsx scripts/verify-catalog.ts",
@@ -15,7 +15,9 @@
     "qa:links": "tsx scripts/qa/link-audit.ts", 
 "prerender": "node scripts/prerender.mjs",
 "verify:seo": "tsx scripts/verify-seo.ts",
-"verify:prerender": "tsx scripts/verify-prerender.ts"
+"verify:prerender": "tsx scripts/verify-prerender.ts",
+
+"verify:deploy": "node scripts/verify-deploy.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
