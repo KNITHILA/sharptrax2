@@ -1,65 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { categories as catalog } from "../data/servicesCatalog";
+import { serviceUrl } from "../lib/serviceUrls";
 
-// --- Machine Data for the Dropdown ---
-const serviceCategories = [
-  {
-    id: "welding-automation",
-    title: "Welding Automation",
-    products: [
-      "Robotic Automation",
-      "Plasma Transferred Arc Welding System",
-      "Welding Rotator",
-      "Pull-Through Welding Automation System",
-      "MIG-Welding System",
-      "TIG Longitudinal Welding SPM",
-      "SAW-Submerged Arc Welding",
-      "Column And Boom",
-      "Port Welding Machine SPM",
-      "Head & Tailstock Units",
-      "Hydraulic End Cap Welding SPM",
-      "TANKWELD-PRO Automated Tank Welding Solution",
-      "Robotic Gantry Automation",
-      "Robotic Trolley Welding",
-      "Material Tilter"
-    ]
-  },
-  {
-    id: "welding-positioners",
-    title: "Welding Positioners",
-    products: [
-      "Welding Positioners",
-      "L-Type Positioner",
-      "Scissor Rollers",
-      "Welding Turn Table"
-    ]
-  },
-  {
-    id: "cnc-cutting",
-    title: "Plasma CNC Cutting Machine",
-    products: [
-      "Plasma CNC Machine"
-    ]
-  },
-  {
-    id: "accessories",
-    title: "Machine Accessories",
-    products: [
-      "Torch Weaving Unit",
-      "AVC Unit",
-      "Laser Seam Tracking Unit",
-      "Welding Torch",
-      "Cross Slides"
-    ]
-  },
-  {
-    id: "membrane-panel",
-    title: "Membrane Panel Welding Machine",
-    products: [
-      "Membrane Panel Welding System"
-    ]
-  }
-];
+// Derived from the shared catalog (same order and titles as before).
+// Products now carry their frozen slug so links never depend on name matching.
+const serviceCategories = catalog.map((c) => ({
+  id: c.id,
+  title: c.title,
+  products: c.products.map((p) => ({ name: p.name, slug: p.slug })),
+}));
 
 export default function Navbar() {
   const [openMenu, setOpenMenu] = useState(false);
@@ -71,8 +21,7 @@ export default function Navbar() {
   
   const navigate = useNavigate();
 
-  const handleProductClick = (categoryId: string, productName: string) => {
-    navigate(`/services?cat=${categoryId}&prod=${encodeURIComponent(productName)}`);
+   const closeMenus = () => {
     setOpenMenu(false);
     setDesktopServicesOpen(false);
   };
@@ -157,15 +106,16 @@ export default function Navbar() {
                       {serviceCategories.find(c => c.id === activeDesktopCat)?.title} Systems
                     </h3>
                     
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                      {serviceCategories.find(c => c.id === activeDesktopCat)?.products.map((prod, idx) => (
-                        <button 
-                          key={idx}
-                          onClick={() => handleProductClick(activeDesktopCat, prod)}
-                          className="w-full text-left text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-md transition-colors leading-relaxed break-words"
+                                      <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                      {serviceCategories.find(c => c.id === activeDesktopCat)?.products.map((prod) => (
+                        <Link
+                          key={prod.slug}
+                          to={serviceUrl(prod.slug)}
+                          onClick={closeMenus}
+                          className="block w-full text-left text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-md transition-colors leading-relaxed break-words"
                         >
-                          {prod}
-                        </button>
+                          {prod.name}
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -267,15 +217,16 @@ export default function Navbar() {
                   </button>
 
                   <div className={`overflow-hidden transition-all duration-300 ${activeMobileCat === category.id ? "max-h-[1000px] mb-3" : "max-h-0"}`}>
-                    <ul className="flex flex-col space-y-1 border-l-2 border-red-200 ml-2 pl-4 py-2">
-                      {category.products.map((prod, idx) => (
-                        <li key={idx}>
-                          <button 
-                            onClick={() => handleProductClick(category.id, prod)}
-                            className="text-gray-500 text-sm hover:text-red-600 text-left w-full whitespace-normal py-1.5 break-words"
+                                      <ul className="flex flex-col space-y-1 border-l-2 border-red-200 ml-2 pl-4 py-2">
+                      {category.products.map((prod) => (
+                        <li key={prod.slug}>
+                          <Link
+                            to={serviceUrl(prod.slug)}
+                            onClick={closeMenus}
+                            className="block text-gray-500 text-sm hover:text-red-600 text-left w-full whitespace-normal py-1.5 break-words"
                           >
-                            {prod}
-                          </button>
+                            {prod.name}
+                          </Link>
                         </li>
                       ))}
                     </ul>
