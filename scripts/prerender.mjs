@@ -6,11 +6,12 @@ import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "vite";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright-core";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
+const IS_VERCEL = !!process.env.VERCEL;
 
 function fail(msg) {
   console.error(`\nprerender FAILED: ${msg}`);
@@ -109,28 +110,46 @@ const server = http.createServer(async (req, res) => {
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
-/* ---------- render ---------- */
-let browser;
-try {
-  browser = await puppeteer.launch({
+/* ---------- browser launch ---------- */
+// Vercel's build image lacks Chromium's system libraries (libnspr4 etc.),
+// so there we use @sparticuz/chromium, which bundles them.
+// Locally we use the Playwright-managed Chromium (npx playwright install chromium).
+async function launchBrowser() {
+  if (IS_VERCEL) {
+    const { default: sparticuz } = await import("@sparticuz/chromium");
+    return chromium.launch({
+      args: sparticuz.args,
+      executablePath: await sparticuz.executablePath(),
+      headless: true,
+    });
+  }
+  return chromium.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 900 });
+}
+
+/* ---------- render ---------- */
+let browser;
+try {
+  browser = await launchBrowser();
+
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
 
   // Keep it fast and deterministic: only same-origin scripts/styles/documents.
   // Images, media, fonts and every external host (YouTube iframes, fonts) are blocked;
   // their elements stay in the DOM, which is all the snapshot needs.
-  await page.setRequestInterception(true);
-  page.on("request", (req) => {
+  await page.route("**/*", (route) => {
+    const req = route.request();
     const url = req.url();
     const local = url.startsWith(origin) || url.startsWith("data:") || url.startsWith("blob:");
     if (!local || ["image", "media", "font"].includes(req.resourceType())) {
-      req.abort();
-    } else {
-      req.continue();
+      return route.abort();
     }
+    return route.continue();
   });
   page.on("pageerror", (err) => console.warn(`warn: page error: ${err.message}`));
 
@@ -146,8 +165,9 @@ try {
   for (const { route, out, expected } of routes) {
     await page.goto(`${origin}${route}`, { waitUntil: "domcontentloaded" });
 
+    // Playwright signature: waitForFunction(fn, arg, options)
     await page.waitForFunction(
-      (name, slug) => {
+      ({ name, slug }) => {
         const h1 = document.querySelector("h1");
         const canon = document.querySelector('link[rel="canonical"][data-seo]');
         return (
@@ -157,15 +177,16 @@ try {
           (canon.getAttribute("href") || "").endsWith("/services/" + slug)
         );
       },
+      { name: expected.name, slug: expected.slug },
       { timeout: 30000 },
-      expected.name,
-      expected.slug,
     );
 
     // let the image fade-in / entrance animations settle
     await new Promise((r) => setTimeout(r, 700));
 
-    const canonical = await page.$eval('link[rel="canonical"]', (el) => el.getAttribute("href"));
+    const canonical = await page.evaluate(
+      () => document.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? null,
+    );
     const wantCanonical = `${siteUrl}/services/${expected.slug}`;
     if (canonical !== wantCanonical) {
       throw new Error(`${route}: canonical is "${canonical}", expected "${wantCanonical}"`);
@@ -190,7 +211,7 @@ try {
   await browser?.close().catch(() => {});
   server.close();
   fail(err instanceof Error ? err.message : String(err));
-} finally {
-  await browser?.close().catch(() => {});
-  server.close();
 }
+
+await browser?.close().catch(() => {});
+server.close();
