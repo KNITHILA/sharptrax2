@@ -1,65 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { categories as catalog } from "../data/servicesCatalog";
 
-// --- Machine Data for the Dropdown ---
-const serviceCategories = [
-  {
-    id: "welding-automation",
-    title: "Welding Automation",
-    products: [
-      "Robotic Automation",
-      "Plasma Transferred Arc Welding System",
-      "Welding Rotator",
-      "Pull-Through Welding Automation System",
-      "MIG-Welding System",
-      "TIG Longitudinal Welding SPM",
-      "SAW-Submerged Arc Welding",
-      "Column And Boom",
-      "Port Welding Machine SPM",
-      "Head & Tailstock Units",
-      "Hydraulic End Cap Welding SPM",
-      "TANKWELD-PRO Automated Tank Welding Solution",
-      "Robotic Gantry Automation",
-      "Robotic Trolley Welding",
-      "Material Tilter"
-    ]
-  },
-  {
-    id: "welding-positioners",
-    title: "Welding Positioners",
-    products: [
-      "Welding Positioners",
-      "L-Type Positioner",
-      "Scissor Rollers",
-      "Welding Turn Table"
-    ]
-  },
-  {
-    id: "cnc-cutting",
-    title: "Plasma CNC Cutting Machine",
-    products: [
-      "Plasma CNC Machine"
-    ]
-  },
-  {
-    id: "accessories",
-    title: "Machine Accessories",
-    products: [
-      "Torch Weaving Unit",
-      "AVC Unit",
-      "Laser Seam Tracking Unit",
-      "Welding Torch",
-      "Cross Slides"
-    ]
-  },
-  {
-    id: "membrane-panel",
-    title: "Membrane Panel Welding Machine",
-    products: [
-      "Membrane Panel Welding System"
-    ]
-  }
-];
+// Derived from the shared catalog (same order and titles as before)
+const serviceCategories = catalog.map((c) => ({
+  id: c.id,
+  title: c.title,
+  products: c.products.map((p) => p.name),
+}));
 
 export default function Navbar() {
   const [openMenu, setOpenMenu] = useState(false);
