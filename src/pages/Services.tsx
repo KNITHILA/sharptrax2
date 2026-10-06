@@ -1,25 +1,69 @@
-import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useLocation, useNavigate, useParams, Navigate } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Send, Zap, PlayCircle, ArrowRight, X, ChevronRight, Settings2 } from "lucide-react";
 import { categories, type Category, type Product } from "../data/servicesCatalog";
+import {
+  productBySlug,
+  categoryBySlug,
+  resolveLegacy,
+  serviceUrl,
+} from "../lib/serviceUrls";
 
 interface RecommendedProduct extends Product {
   categoryId: string;
 }
 
-
+/* ------------------------------------------------------------------ */
+/* OUTER: decides WHICH machine to show (or where to redirect)         */
+/* ------------------------------------------------------------------ */
 export default function Services() {
+  const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
+
+  // /services/<slug>
+  if (slug) {
+    const product = productBySlug(slug);
+    const category = categoryBySlug(slug);
+    if (!product || !category) {
+      return <Navigate to="/services" replace />;
+    }
+    return <ServiceDetail key={product.slug} product={product} category={category} />;
+  }
+
+  // /services  (maybe with legacy ?cat=&prod=)
+  const params = new URLSearchParams(location.search);
+  const legacy = resolveLegacy(params.get("cat"), params.get("prod"));
+  if (legacy) {
+    return <Navigate to={serviceUrl(legacy.slug)} replace />;
+  }
+
+  // Plain /services (or unresolvable query): show the first machine
+  const defaultCategory = categories[0];
+  const defaultProduct = defaultCategory.products[0];
+  return (
+    <ServiceDetail
+      key={defaultProduct.slug}
+      product={defaultProduct}
+      category={defaultCategory}
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* INNER: the existing page, now driven by props                       */
+/* ------------------------------------------------------------------ */
+interface ServiceDetailProps {
+  product: Product;
+  category: Category;
+}
+
+function ServiceDetail({ product, category }: ServiceDetailProps) {
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
-  
-  // State for the active machine
-  const [activeCat, setActiveCat] = useState<Category>(categories[0]);
-  const [activeProd, setActiveProd] = useState<Product>(categories[0].products[0]);
+
   const [activeImgIndex, setActiveImgIndex] = useState(0);
-  const [recommendedProducts, setRecommendedProducts] = useState<RecommendedProduct[]>([]);
 
   // Form / Modal State
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
@@ -37,49 +81,30 @@ export default function Services() {
     return () => { document.body.style.overflow = "unset"; };
   }, [isEnquiryModalOpen]);
 
-  // Read URL parameters on load and when they change
+  // Scroll to top whenever the machine changes
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const catIdParam = params.get("cat");
-    const prodNameParam = params.get("prod");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [product.slug]);
 
-    let currentCat = categories[0];
-    let currentProd = categories[0].products[0];
-
-    if (catIdParam && prodNameParam) {
-      const foundCat = categories.find((c) => c.id === catIdParam);
-      if (foundCat) {
-        const foundProd = foundCat.products.find(
-          (p) => p.name.toLowerCase() === prodNameParam.toLowerCase()
-        );
-        if (foundProd) {
-          currentCat = foundCat;
-          currentProd = foundProd;
-        }
-      }
-    }
-
-    setActiveCat(currentCat);
-    setActiveProd(currentProd);
-    setActiveImgIndex(0);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Calculate Recommendations
-    let recs: RecommendedProduct[] = currentCat.products
-      .filter((p) => p.name !== currentProd.name)
-      .map((p) => ({ ...p, categoryId: currentCat.id }));
+  // Related systems: same category (excluding current), fall back to Welding Automation
+  const recommendedProducts = useMemo<RecommendedProduct[]>(() => {
+    let recs: RecommendedProduct[] = category.products
+      .filter((p) => p.name !== product.name)
+      .map((p) => ({ ...p, categoryId: category.id }));
 
     if (recs.length < 3) {
-      const fallbackCat = categories.find(c => c.id === "welding-automation") || categories[0];
+      const fallbackCat =
+        categories.find((c) => c.id === "welding-automation") || categories[0];
       const extraRecs = fallbackCat.products
-        .filter((p) => p.name !== currentProd.name && !recs.find(r => r.name === p.name))
+        .filter((p) => p.name !== product.name && !recs.find((r) => r.name === p.name))
         .map((p) => ({ ...p, categoryId: fallbackCat.id }));
       recs = [...recs, ...extraRecs];
     }
 
-    setRecommendedProducts(recs.slice(0, 3));
-  }, [location.search]);
+    return recs.slice(0, 3);
+  }, [category, product]);
 
+  // Phase 2: Related cards still emit legacy URLs; the outer component redirects them.
   const handleRecommendationClick = (categoryId: string, productName: string) => {
     navigate(`/services?cat=${categoryId}&prod=${encodeURIComponent(productName)}`);
   };
@@ -106,19 +131,19 @@ export default function Services() {
     emailjs.send(
       "service_67r7kfg",
       "template_xwnafxs",
-      { 
-        user_name: formData.name, 
-        user_email: formData.email, 
-        user_phone: formData.phone, 
-        project_details: formData.details, 
-        product_interest: activeProd.name 
+      {
+        user_name: formData.name,
+        user_email: formData.email,
+        user_phone: formData.phone,
+        project_details: formData.details,
+        product_interest: product.name
       },
       "9bJ_hqjsB63RMeUH0"
     ).then(() => {
       alert("Enquiry Sent Successfully!");
       setFormData({ name: "", email: "", phone: "", details: "" });
       setErrors({});
-      setIsEnquiryModalOpen(false); 
+      setIsEnquiryModalOpen(false);
     }).catch(err => {
       console.error(err);
       alert("Failed to send. Please try again.");
@@ -130,21 +155,19 @@ export default function Services() {
       <div className="h-20 w-full bg-white border-b border-gray-200"></div>
 
       {/* --- HERO BANNER --- */}
-      {/* Reduced the dark slate color slightly as requested for a softer look */}
       <div className="bg-[#444f5a] py-16 px-6 border-b-4 border-yellow-500 relative overflow-hidden">
-        {/* Adjusted gradient to seamlessly match the newly softened slate gray background */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#2c343f] to-transparent opacity-50 pointer-events-none"></div>
-        
+
         <div className="max-w-7xl mx-auto flex flex-col relative z-10">
           <div className="flex items-center text-gray-100 text-sm mb-4 font-bold tracking-widest uppercase">
              <span className="hover:text-white cursor-pointer transition-colors" onClick={() => navigate("/")}>Home</span>
              <ChevronRight size={14} className="mx-2" />
              <span className="hover:text-white cursor-pointer transition-colors">Services</span>
              <ChevronRight size={14} className="mx-2" />
-             <span className="text-yellow-400">{activeCat.title}</span>
+             <span className="text-yellow-400">{category.title}</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tight uppercase max-w-4xl">
-            {activeProd.name}
+            {product.name}
           </h1>
         </div>
       </div>
@@ -152,7 +175,7 @@ export default function Services() {
       {/* --- SPLIT LAYOUT SECTION --- */}
       <section className="max-w-7xl mx-auto px-4 md:px-8 mt-12 mb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          
+
           {/* LEFT: Media (Image + Thumbnails + Video) - STICKY ON DESKTOP */}
           <div className="lg:col-span-7 flex flex-col lg:sticky lg:top-28">
             {/* Main Image */}
@@ -164,17 +187,17 @@ export default function Services() {
                   animate={{ opacity: 1, filter: "blur(0px)" }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  src={activeProd.imgs[activeImgIndex]}
-                  alt={activeProd.name}
+                  src={product.imgs[activeImgIndex]}
+                  alt={product.name}
                   className="max-h-full w-auto object-contain transition-transform duration-700 group-hover:scale-105"
                 />
               </AnimatePresence>
             </div>
 
             {/* Thumbnail Strip */}
-            {activeProd.imgs.length > 1 && (
+            {product.imgs.length > 1 && (
               <div className="flex gap-3 overflow-x-auto mt-4 pb-2 custom-scrollbar">
-                {activeProd.imgs.map((img, idx) => (
+                {product.imgs.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImgIndex(idx)}
@@ -187,22 +210,21 @@ export default function Services() {
                 ))}
               </div>
             )}
-            
+
             {/* Machine Videos */}
-            {activeProd.videos && activeProd.videos.length > 0 && (
+            {product.videos && product.videos.length > 0 && (
               <div className="mt-8 pt-8 border-t border-gray-200">
                 <h3 className="text-xl font-black uppercase text-gray-900 mb-6 flex items-center gap-2 tracking-tight">
                   <PlayCircle className="text-red-600" size={24} /> Video Demonstration
                 </h3>
                 <div className="grid gap-6">
-                  {activeProd.videos.map((vid, idx) => (
-                    // Updated video background to match the neutral gray header
+                  {product.videos.map((vid, idx) => (
                     <div key={idx} className="bg-neutral-800 rounded-2xl aspect-video relative shadow-md border border-gray-200 overflow-hidden">
                       {vid.includes("youtube.com") || vid.includes("youtu.be") ? (
                         <iframe
                           className="w-full h-full absolute inset-0 border-0"
                           src={vid}
-                          title={`${activeProd.name} Video ${idx + 1}`}
+                          title={`${product.name} Video ${idx + 1}`}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         ></iframe>
@@ -220,25 +242,25 @@ export default function Services() {
 
           {/* RIGHT: Product Information - SCROLLING ON DESKTOP */}
           <div className="lg:col-span-5 flex flex-col pt-2">
-            
+
             {/* System Overview */}
             <div className="mb-10">
                <h3 className="text-2xl font-black text-gray-900 mb-4 pb-2 flex items-center gap-3 uppercase tracking-tight">
                  <Settings2 className="text-red-600" size={28} /> System Overview
                </h3>
                <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                 {activeProd.desc}
+                 {product.desc}
                </p>
             </div>
 
             {/* Key Features List */}
-            {activeProd.features && (
+            {product.features && (
               <div className="mb-12">
                 <h3 className="text-2xl font-black text-gray-900 mb-6 pb-2 flex items-center gap-3 uppercase tracking-tight">
                   <Zap className="text-red-600" size={28} /> Specifications
                 </h3>
                 <ul className="space-y-4">
-                  {activeProd.features.map((feature, i) => (
+                  {product.features.map((feature, i) => (
                     <li key={i} className="flex gap-4 items-start bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-red-300 transition-colors">
                       <CheckCircle2 className="text-red-600 shrink-0 mt-0.5" size={20} />
                       <span className="text-gray-700 font-medium leading-snug">{feature}</span>
@@ -251,7 +273,7 @@ export default function Services() {
             {/* Final CTA Button placed cleanly at the bottom */}
             <div className="mt-auto border-t border-gray-200 pt-8 pb-4">
                <h4 className="text-lg font-bold text-gray-500 mb-4 uppercase tracking-widest text-center">Interested in this system?</h4>
-               <button 
+               <button
                  onClick={() => setIsEnquiryModalOpen(true)}
                  className="w-full py-5 rounded-xl font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 text-base bg-red-600 text-white hover:bg-red-700 hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-3"
                >
@@ -277,22 +299,22 @@ export default function Services() {
               View Full Catalog <ArrowRight size={16}/>
             </span>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {recommendedProducts.map((prod, idx) => (
-              <div 
+              <div
                 key={idx}
                 onClick={() => handleRecommendationClick(prod.categoryId, prod.name)}
                 className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-xl hover:border-red-300 transition-all duration-300 flex flex-col"
               >
                 <div className="h-56 w-full bg-gray-50 flex items-center justify-center p-6 border-b border-gray-100">
-                  <img 
-                    src={prod.imgs[0]} 
-                    alt={prod.name} 
+                  <img
+                    src={prod.imgs[0]}
+                    alt={prod.name}
                     className="max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-                
+
                 <div className="p-6 flex flex-col flex-grow">
                   <h4 className="font-black text-gray-900 text-lg uppercase leading-snug group-hover:text-red-600 transition-colors mb-4">
                     {prod.name}
@@ -310,17 +332,17 @@ export default function Services() {
       {/* --- ENQUIRY MODAL POPUP --- */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-neutral-900/80 backdrop-blur-md"
             onClick={() => setIsEnquiryModalOpen(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()} 
+              onClick={(e) => e.stopPropagation()}
               className="bg-white w-full max-w-lg rounded-2xl p-6 md:p-10 shadow-2xl relative border-t-[6px] border-red-600"
             >
-              <button 
+              <button
                 onClick={() => setIsEnquiryModalOpen(false)}
                 className="absolute top-4 right-4 w-8 h-8 bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-md flex items-center justify-center transition-colors"
               >
@@ -329,9 +351,9 @@ export default function Services() {
 
               <h3 className="text-3xl font-black text-gray-900 mb-1 uppercase tracking-tight">Enquiry</h3>
               <p className="text-sm text-gray-500 mb-6 border-b border-gray-100 pb-4">
-                Regarding: <strong className="text-red-600 font-bold">{activeProd.name}</strong>
+                Regarding: <strong className="text-red-600 font-bold">{product.name}</strong>
               </p>
-              
+
               <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Full Name</label>
@@ -339,7 +361,7 @@ export default function Services() {
                     className={`w-full bg-gray-50 border p-3.5 rounded-lg text-sm font-medium focus:outline-none transition-all ${errors.name ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-red-500 focus:bg-white'}`} />
                   {errors.name && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{errors.name}</p>}
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Email</label>
@@ -354,14 +376,14 @@ export default function Services() {
                     {errors.phone && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{errors.phone}</p>}
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Requirements</label>
                   <textarea name="details" rows={4} value={formData.details} onChange={handleInputChange}
                     className={`w-full bg-gray-50 border p-3.5 rounded-lg text-sm font-medium focus:outline-none resize-none transition-all ${errors.details ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-red-500 focus:bg-white'}`}></textarea>
                   {errors.details && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{errors.details}</p>}
                 </div>
-                
+
                 <button type="submit" disabled={isSending}
                   className={`w-full py-4 mt-4 rounded-xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg text-sm ${isSending ? "bg-gray-400 text-white cursor-not-allowed" : "bg-black text-white hover:bg-red-600 active:scale-[0.98]"}`}>
                   <Send size={18} /> {isSending ? "Sending..." : "Submit Enquiry"}

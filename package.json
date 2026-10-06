@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "verify:catalog": "tsx scripts/verify-catalog.ts",
     "qa:capture": "node scripts/qa/capture.mjs",
-    "qa:diff": "node scripts/qa/diff.mjs"
+    "qa:diff": "node scripts/qa/diff.mjs",
+    "qa:redirects": "tsx scripts/qa/verify-redirects.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
