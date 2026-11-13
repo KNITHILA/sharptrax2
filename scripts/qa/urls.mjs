@@ -1,0 +1,32 @@
+// The 26 legacy URLs. Hard-coded on purpose: it must work on the OLD build,
+// before the catalog exists. `slug` is used by later phases.
+export const LEGACY = [
+  { cat: "welding-automation", prod: "Robotic Automation", slug: "robotic-automation" },
+  { cat: "welding-automation", prod: "Plasma Transferred Arc Welding System", slug: "plasma-transferred-arc-welding-system" },
+  { cat: "welding-automation", prod: "Welding Rotator", slug: "welding-rotator" },
+  { cat: "welding-automation", prod: "Pull-Through Welding Automation System", slug: "pull-through-welding-automation-system" },
+  { cat: "welding-automation", prod: "MIG-Welding System", slug: "mig-welding-system" },
+  { cat: "welding-automation", prod: "TIG Longitudinal Welding SPM", slug: "tig-longitudinal-welding-spm" },
+  { cat: "welding-automation", prod: "SAW-Submerged Arc Welding", slug: "saw-submerged-arc-welding" },
+  { cat: "welding-automation", prod: "Column And Boom", slug: "column-and-boom" },
+  { cat: "welding-automation", prod: "Port Welding Machine SPM", slug: "port-welding-machine-spm" },
+  { cat: "welding-automation", prod: "Head & Tailstock Units", slug: "head-and-tailstock-units" },
+  { cat: "welding-automation", prod: "Hydraulic End Cap Welding SPM", slug: "hydraulic-end-cap-welding-spm" },
+  { cat: "welding-automation", prod: "TANKWELD-PRO Automated Tank Welding Solution", slug: "tankweld-pro-automated-tank-welding-solution" },
+  { cat: "welding-automation", prod: "Robotic Gantry Automation", slug: "robotic-gantry-automation" },
+  { cat: "welding-automation", prod: "Robotic Trolley Welding", slug: "robotic-trolley-welding" },
+  { cat: "welding-automation", prod: "Material Tilter", slug: "material-tilter" },
+  { cat: "welding-positioners", prod: "Welding Positioners", slug: "welding-positioners" },
+  { cat: "welding-positioners", prod: "L-Type Positioner", slug: "l-type-positioner" },
+  { cat: "welding-positioners", prod: "Scissor Rollers", slug: "scissor-rollers" },
+  { cat: "welding-positioners", prod: "Welding Turn Table", slug: "welding-turn-table" },
+  { cat: "cnc-cutting", prod: "Plasma CNC Machine", slug: "plasma-cnc-machine" },
+  { cat: "accessories", prod: "Torch Weaving Unit", slug: "torch-weaving-unit" },
+  { cat: "accessories", prod: "AVC Unit", slug: "avc-unit" },
+  { cat: "accessories", prod: "Laser Seam Tracking Unit", slug: "laser-seam-tracking-unit" },
+  { cat: "accessories", prod: "Welding Torch", slug: "welding-torch" },
+  { cat: "accessories", prod: "Cross Slides", slug: "cross-slides" },
+  { cat: "membrane-panel", prod: "Membrane Panel Welding System", slug: "membrane-panel-welding-system" },
+];
+
+export const WIDTHS = [1440, 768, 390];

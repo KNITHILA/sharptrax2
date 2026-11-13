@@ -1,52 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import emailjs from "@emailjs/browser";
 import { Link } from "react-router-dom";
-import { serviceUrlByName } from "../lib/serviceUrls";
+import { useCatalog } from "../context/CatalogContext";
+import { serviceUrl } from "../lib/serviceUrls";
 
 // --- DATA ---
-const heroVideos = [
-  "/welding.mp4",
-];
-
-const solutions = [
-  {
-    title: "Robotic Automation",
-    categoryId: "welding-automation",
-    desc: "At Sharptrax Technologies, we design and integrate robotic welding systems that deliver consistent weld quality, improved productivity, and reduced manual dependency.",
-    img: "/screen5/5ma1.svg",
-  },
-  {
-    title: "Welding Positioners",
-    categoryId: "welding-positioners",
-    desc: "Custom-built welding positioners designed to improve accessibility, accuracy, and productivity in complex welding applications.",
-    img: "/screen5/5ma2.svg",
-  },
-  {
-    title: "Plasma Transferred Arc Welding System",
-    categoryId: "welding-automation",
-    desc: "Our PTA welding systems provide precise hardfacing and cladding solutions with superior material control and repeatability.",
-    img: "/screen5/5ma3.svg",
-  },
-  {
-    title: "Plasma CNC Machine",
-    categoryId: "cnc-cutting",
-    desc: "Automated CNC cutting solutions delivering accuracy, efficiency, and clean cuts for industrial fabrication requirements.",
-    img: "/screen5/5ma4.svg",
-  },
-  {
-    title: "Welding Rotator",
-    categoryId: "welding-automation",
-    desc: "Engineered for safe and efficient rotation of cylindrical components, ensuring uniform weld quality and operator safety.",
-    img: "/screen5/5ma5.svg",
-  },
-  {
-    title: "Port Welding Machine SPM",
-    categoryId: "welding-automation",
-    desc: "Tailor-made automation and welding SPMs designed to meet unique production and process requirements.",
-    img: "/screen5/5ma6.svg",
-  },
-];
+const heroVideos = ["/welding.mp4"];
 
 const logos = [
   "/companylogo/logo (1).svg",
@@ -98,7 +58,7 @@ const testimonials = [
     name: "GANESAN",
     role: "Regional Markets Executive",
     text: "Their robotic welding solutions helped us reduce manual errors and increase output. Sharptrax is our go-to partner for all automation needs!",
-    imgSrc: "/ceoimg.png", 
+    imgSrc: "/ceoimg.png",
     initial: "G",
     bgColor: "bg-blue-600",
   },
@@ -107,7 +67,7 @@ const testimonials = [
     name: "Ram Kumar",
     role: "Client",
     text: "Sharptrax Technologies provided us with a seamless welding automation system that significantly improved our production efficiency. Their expertise and customer support are exceptional!",
-    imgSrc: "", 
+    imgSrc: "",
     initial: "R",
     bgColor: "bg-slate-400",
   },
@@ -116,7 +76,7 @@ const testimonials = [
     name: "Elstin S",
     role: "Client",
     text: "We integrated their solutions into our plant, and the results were outstanding! The precision and reliability of their systems are truly commendable.",
-    imgSrc: "", 
+    imgSrc: "",
     initial: "E",
     bgColor: "bg-gray-600",
   },
@@ -125,7 +85,7 @@ const testimonials = [
     name: "Helana",
     role: "Client",
     text: "We have been working with Sharptrax for years, and their dedication to quality and innovation is unmatched. Highly recommend their services!",
-    imgSrc: "", 
+    imgSrc: "",
     initial: "H",
     bgColor: "bg-blue-500",
   },
@@ -134,7 +94,7 @@ const testimonials = [
     name: "Peter Amala Anand",
     role: "Client",
     text: "The team at Sharptrax Technologies understands automation like no other. Their custom-built systems were a game-changer for our manufacturing unit.",
-    imgSrc: "", 
+    imgSrc: "",
     initial: "P",
     bgColor: "bg-gray-700",
   },
@@ -144,10 +104,10 @@ const row1 = logos.slice(0, 9);
 const row2 = logos.slice(9, 18);
 
 // --- MAIN COMPONENT ---
-export default function App() {
+export default function Home() {
+  const { featured, allProducts } = useCatalog();
   const [scrollY, setScrollY] = useState(0);
-  
-  // Video Slider State
+
   const [currentVideo] = useState(0);
 
   const [openForm, setOpenForm] = useState(false);
@@ -173,7 +133,25 @@ export default function App() {
 
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  // Auto-slide video timer (Wait 30 seconds, then slide perfectly
+  // Admin-managed cards. A card is hidden if its product no longer exists.
+  const solutions = useMemo(
+    () =>
+      featured.flatMap((f) => {
+        const product = allProducts.find((p) => p.slug === f.slug);
+        if (!product) return [];
+        return [
+          {
+            id: f.id,
+            slug: f.slug,
+            title: f.title || product.name,
+            desc: f.desc || product.desc,
+            img: f.img || product.imgs[0] || "",
+          },
+        ];
+      }),
+    [featured, allProducts],
+  );
+
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
@@ -190,17 +168,16 @@ export default function App() {
     const errors = validateQuoteForm();
     setValidationErrors(errors);
 
-    // If no errors, proceed to send email
     if (Object.keys(errors).length === 0) {
       setIsSending(true);
 
       if (form.current) {
         emailjs
           .sendForm(
-            "service_67r7kfg", // Service ID
-            "template_xwnafxs", // Template ID
+            "service_67r7kfg",
+            "template_xwnafxs",
             form.current,
-            "9bJ_hqjsB63RMeUH0" // Public Key
+            "9bJ_hqjsB63RMeUH0",
           )
           .then(() => {
             alert("Enquiry sent! We will get back to you soon.");
@@ -226,7 +203,7 @@ export default function App() {
   };
 
   const handleQuoteInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setQuoteFormData({
       ...quoteFormData,
@@ -235,7 +212,7 @@ export default function App() {
   };
 
   const validateQuoteForm = () => {
-    let errors: {
+    const errors: {
       customerName?: string;
       customerEmail?: string;
       customerCity?: string;
@@ -243,8 +220,7 @@ export default function App() {
       projectMessage?: string;
     } = {};
 
-    if (!quoteFormData.customerName.trim())
-      errors.customerName = "Name is required";
+    if (!quoteFormData.customerName.trim()) errors.customerName = "Name is required";
 
     if (!quoteFormData.customerEmail.trim()) {
       errors.customerEmail = "Email is required";
@@ -252,8 +228,7 @@ export default function App() {
       errors.customerEmail = "Invalid email";
     }
 
-    if (!quoteFormData.customerCity.trim())
-      errors.customerCity = "City is required";
+    if (!quoteFormData.customerCity.trim()) errors.customerCity = "City is required";
 
     if (!quoteFormData.customerPhone.trim()) {
       errors.customerPhone = "Phone number required";
@@ -261,8 +236,7 @@ export default function App() {
       errors.customerPhone = "Number must be 10 digits";
     }
 
-    if (!quoteFormData.projectMessage.trim())
-      errors.projectMessage = "Message is required";
+    if (!quoteFormData.projectMessage.trim()) errors.projectMessage = "Message is required";
 
     return errors;
   };
@@ -272,15 +246,11 @@ export default function App() {
   };
 
   const handleNextTestimonial = () => {
-    setCurrentTestimonial((prev) =>
-      prev === testimonials.length - 1 ? 0 : prev + 1
-    );
+    setCurrentTestimonial((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1));
   };
 
   const handlePrevTestimonial = () => {
-    setCurrentTestimonial((prev) =>
-      prev === 0 ? testimonials.length - 1 : prev - 1
-    );
+    setCurrentTestimonial((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
   };
 
   const activeTestimonial = testimonials[currentTestimonial];
@@ -288,12 +258,9 @@ export default function App() {
   // --- RENDER ---
   return (
     <div className="w-full min-h-screen hero-font relative">
-
       {/* 1. HERO SECTION */}
       <section className="relative h-screen overflow-hidden bg-black">
-        
-        {/* SMOOTH CSS VIDEO SLIDER */}
-        <div 
+        <div
           className="absolute inset-0 w-full h-full overflow-hidden"
           style={{ transform: `translateY(${scrollY * 0.4}px)` }}
         >
@@ -317,7 +284,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* HERO TEXT (PERFECTLY ALIGNED LEFT, NO BLACK OVERLAY) */}
         <div className="relative z-10 h-full flex items-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
           <motion.div
             initial={{ x: -200, opacity: 0 }}
@@ -345,8 +311,8 @@ export default function App() {
                   Enquire Now
                 </button>
 
-                <a 
-                  href="/services" 
+                <a
+                  href="/services"
                   className="bg-transparent backdrop-blur-sm text-white shadow-xl px-8 py-3.5 rounded-lg border-2 border-white flex items-center justify-center hover:bg-white hover:text-black transition-colors uppercase tracking-wider text-sm font-bold"
                 >
                   Explore Solutions
@@ -360,12 +326,16 @@ export default function App() {
       {/* MODAL POPUP FORM */}
       <AnimatePresence>
         {openForm && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] px-4 backdrop-blur-sm"
           >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
               className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative"
             >
               <button
@@ -387,9 +357,13 @@ export default function App() {
                     name="customerName"
                     value={quoteFormData.customerName}
                     onChange={handleQuoteInputChange}
-                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${validationErrors.customerName ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"}`}
+                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${
+                      validationErrors.customerName ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"
+                    }`}
                   />
-                  {validationErrors.customerName && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerName}</p>}
+                  {validationErrors.customerName && (
+                    <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerName}</p>
+                  )}
                 </div>
 
                 <div>
@@ -399,9 +373,13 @@ export default function App() {
                     name="customerEmail"
                     value={quoteFormData.customerEmail}
                     onChange={handleQuoteInputChange}
-                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${validationErrors.customerEmail ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"}`}
+                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${
+                      validationErrors.customerEmail ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"
+                    }`}
                   />
-                  {validationErrors.customerEmail && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerEmail}</p>}
+                  {validationErrors.customerEmail && (
+                    <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerEmail}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -412,9 +390,13 @@ export default function App() {
                       name="customerPhone"
                       value={quoteFormData.customerPhone}
                       onChange={handleQuoteInputChange}
-                      className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${validationErrors.customerPhone ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"}`}
+                      className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${
+                        validationErrors.customerPhone ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"
+                      }`}
                     />
-                    {validationErrors.customerPhone && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerPhone}</p>}
+                    {validationErrors.customerPhone && (
+                      <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerPhone}</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1 block">City</label>
@@ -423,9 +405,13 @@ export default function App() {
                       name="customerCity"
                       value={quoteFormData.customerCity}
                       onChange={handleQuoteInputChange}
-                      className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${validationErrors.customerCity ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"}`}
+                      className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors ${
+                        validationErrors.customerCity ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"
+                      }`}
                     />
-                    {validationErrors.customerCity && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerCity}</p>}
+                    {validationErrors.customerCity && (
+                      <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.customerCity}</p>
+                    )}
                   </div>
                 </div>
 
@@ -436,9 +422,13 @@ export default function App() {
                     value={quoteFormData.projectMessage}
                     onChange={handleQuoteInputChange}
                     rows={4}
-                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors resize-none ${validationErrors.projectMessage ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"}`}
+                    className={`w-full border rounded-lg p-3 text-sm focus:outline-none transition-colors resize-none ${
+                      validationErrors.projectMessage ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-red-500 bg-gray-50"
+                    }`}
                   ></textarea>
-                  {validationErrors.projectMessage && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.projectMessage}</p>}
+                  {validationErrors.projectMessage && (
+                    <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{validationErrors.projectMessage}</p>
+                  )}
                 </div>
 
                 <div className="pt-2">
@@ -458,7 +448,6 @@ export default function App() {
 
       {/* 2. ENGINEERING EXCELLENCE SECTION */}
       <section className="relative w-full py-20 md:py-32 bg-gray-100 overflow-hidden">
-        {/* BACKGROUND GRID */}
         <div
           className="absolute inset-0 opacity-60 md:-mt-30"
           style={{
@@ -471,7 +460,6 @@ export default function App() {
         ></div>
 
         <div className="relative max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 px-6 md:px-10 items-center">
-          {/* LEFT SIDE IMAGE */}
           <div className="relative">
             <img
               src="/2nd-img1.svg"
@@ -480,7 +468,6 @@ export default function App() {
             />
           </div>
 
-          {/* RIGHT CONTENT */}
           <div className="z-10">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-[1.1]">
               Engineering <br />
@@ -496,28 +483,18 @@ export default function App() {
               automation systems for demanding industrial applications.
             </p>
 
-            {/* STATS */}
             <div className="flex flex-row gap-8 md:gap-16 mt-10">
               <div>
-                <h3 className="text-5xl md:text-7xl font-bold text-red-500">
-                  20+
-                </h3>
-                <p className="text-gray-600 text-xs md:text-sm mt-1">
-                  Years of Experience
-                </p>
+                <h3 className="text-5xl md:text-7xl font-bold text-red-500">20+</h3>
+                <p className="text-gray-600 text-xs md:text-sm mt-1">Years of Experience</p>
               </div>
 
               <div>
-                <h3 className="text-5xl md:text-7xl font-bold text-red-500">
-                  5+
-                </h3>
-                <p className="text-gray-600 text-xs md:text-sm mt-1">
-                  Global automation partners
-                </p>
+                <h3 className="text-5xl md:text-7xl font-bold text-red-500">5+</h3>
+                <p className="text-gray-600 text-xs md:text-sm mt-1">Global automation partners</p>
               </div>
             </div>
 
-            {/* SMALL IMAGE */}
             <div className="mt-8 md:mt-5">
               <img
                 src="/2nd-img2.svg"
@@ -528,7 +505,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* BOTTOM TEXT */}
         <div className="relative max-w-7xl mx-auto px-6 md:px-10 md:-mt-55 mt-16">
           <h3 className="text-xl md:text-2xl font-bold text-gray-800">
             The Sharptrax Technologies Facility
@@ -555,8 +531,6 @@ export default function App() {
         <div className="absolute inset-0 bg-black/30"></div>
 
         <div className="relative h-full max-w-7xl mx-auto w-full px-6 md:px-10 lg:px-16 flex flex-col justify-between">
-          
-          {/* TITLE - Top Left */}
           <div className="mt-12 lg:mt-32 lg:absolute lg:top-0 lg:left-16 mb-12 lg:mb-0">
             <p className="text-[10px] md:text-xs tracking-[3px] uppercase text-gray-200 font-bold mb-4">
               Built on Precision, Engineering & Trust
@@ -567,41 +541,38 @@ export default function App() {
             </h1>
           </div>
 
-          {/* FEATURE BOXES - Bottom Row */}
           <div className="lg:absolute lg:bottom-20 lg:left-0 w-full lg:px-16 pb-10 lg:pb-0">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-              
               <div className="h-48 md:h-56 w-full flex flex-col justify-between p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-colors">
-                <img src="/Comp3/comp3-1.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon"/>
+                <img src="/Comp3/comp3-1.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon" />
                 <p className="text-sm md:text-base font-bold leading-tight">Advanced automation systems</p>
               </div>
 
               <div className="h-48 md:h-56 w-full flex flex-col justify-between p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-colors">
-                <img src="/Comp3/comp3-2.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon"/>
+                <img src="/Comp3/comp3-2.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon" />
                 <p className="text-sm md:text-base font-bold leading-tight">High-precision welding solutions</p>
               </div>
 
               <div className="h-48 md:h-56 w-full flex flex-col justify-between p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-colors">
-                <img src="/Comp3/comp3-3.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon"/>
+                <img src="/Comp3/comp3-3.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon" />
                 <p className="text-sm md:text-base font-bold leading-tight">Proven industrial performance</p>
               </div>
 
               <div className="h-48 md:h-56 w-full flex flex-col justify-between p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-colors">
-                <img src="/Comp3/comp3-4.svg" className="w-10 h-10 mb-4 opacity-90" alt="icon"/>
+                <img src="/Comp3/comp3-4.svg" className="w-10 h-10 mb-4 opacity-90" alt="icon" />
                 <p className="text-sm md:text-base font-bold leading-tight">Reliable project delivery</p>
               </div>
 
               <div className="h-48 md:h-56 w-full flex flex-col justify-between p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-colors col-span-2 sm:col-span-1 lg:col-span-1">
-                <img src="/Comp3/comp3-5.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon"/>
+                <img src="/Comp3/comp3-5.svg" className="w-10 h-10 md:w-12 md:h-12 opacity-90" alt="icon" />
                 <p className="text-sm md:text-base font-bold leading-tight">Customer-focused engineering</p>
               </div>
-
             </div>
           </div>
         </div>
       </section>
-      
-      {/* 4. AUTOMATION SOLUTIONS GRID */}
+
+      {/* 4. AUTOMATION SOLUTIONS GRID (admin-managed) */}
       <section className="bg-gray-50 py-24 px-6 border-b border-gray-200">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -611,36 +582,38 @@ export default function App() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-                       {solutions.map((item, index) => (
-              <Link
-                to={serviceUrlByName(item.title)}
-                key={index}
-                className="group flex flex-col sm:flex-row items-center sm:items-stretch gap-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 hover:border-red-400 hover:shadow-xl transition-all duration-300 cursor-pointer block"
-              >
-                {/* inner content unchanged */}
-                <div className="flex-1 flex flex-col justify-center text-center sm:text-left">
-                  <h3 className="font-black text-xl text-gray-900 mb-3 group-hover:text-red-600 transition-colors uppercase tracking-tight">
-                    {item.title}
-                  </h3>
-                  <p className="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-3">
-                    {item.desc}
-                  </p>
-                  <span className="mt-auto inline-flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-red-600 uppercase tracking-widest group-hover:text-gray-900 transition-colors">
-                    View Specifications <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
-                  </span>
-                </div>
+          {solutions.length > 0 && (
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+              {solutions.map((item) => (
+                <Link
+                  to={serviceUrl(item.slug)}
+                  key={item.id}
+                  className="group flex flex-col sm:flex-row items-center sm:items-stretch gap-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 hover:border-red-400 hover:shadow-xl transition-all duration-300 cursor-pointer block"
+                >
+                  <div className="flex-1 flex flex-col justify-center text-center sm:text-left">
+                    <h3 className="font-black text-xl text-gray-900 mb-3 group-hover:text-red-600 transition-colors uppercase tracking-tight">
+                      {item.title}
+                    </h3>
+                    <p className="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-3">{item.desc}</p>
+                    <span className="mt-auto inline-flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-red-600 uppercase tracking-widest group-hover:text-gray-900 transition-colors">
+                      View Specifications{" "}
+                      <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+                    </span>
+                  </div>
 
-                <div className="w-32 h-32 md:w-40 md:h-40 shrink-0 bg-gray-50 rounded-xl p-4 flex items-center justify-center border border-gray-100">
-                  <img
-                    src={item.img}
-                    alt={item.title}
-                    className="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              </Link>
-            ))}
-          </div>
+                  {item.img && (
+                    <div className="w-32 h-32 md:w-40 md:h-40 shrink-0 bg-gray-50 rounded-xl p-4 flex items-center justify-center border border-gray-100">
+                      <img
+                        src={item.img}
+                        alt={item.title}
+                        className="max-h-full max-w-full object-contain transform group-hover:scale-110 transition-transform duration-500"
+                      />
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-center mt-12">
             <a
@@ -653,7 +626,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 5. CLIENT LOGOS GALLERY (MOVED HERE) */}
+      {/* 5. CLIENT LOGOS */}
       <section className="py-16 md:py-24 bg-white border-b border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 mb-12">
           <h2 className="text-center text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tight">
@@ -662,7 +635,6 @@ export default function App() {
           <div className="w-16 h-1 bg-red-600 mx-auto mt-4 rounded-full"></div>
         </div>
 
-        {/* ROW 1 */}
         <div className="overflow-hidden mb-8 md:mb-12">
           <div className="flex gap-10 md:gap-20 scroll-right w-max">
             {[...row1, ...row1].map((logo, i) => (
@@ -676,7 +648,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* ROW 2 */}
         <div className="overflow-hidden">
           <div className="flex gap-10 md:gap-20 scroll-left w-max">
             {[...row2, ...row2].map((logo, i) => (
@@ -691,12 +662,11 @@ export default function App() {
         </div>
       </section>
 
-      {/* 6. TESTIMONIAL SECTION */}
+      {/* 6. TESTIMONIALS */}
       <section className="py-24 bg-gray-50 overflow-hidden border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center justify-between gap-16">
-          
           <div className="relative w-full max-w-sm shrink-0 flex justify-center items-center">
-            <motion.div 
+            <motion.div
               key={activeTestimonial.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -710,7 +680,9 @@ export default function App() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className={`w-full h-full flex items-center justify-center ${activeTestimonial.bgColor} text-white text-8xl font-black font-serif`}>
+                <div
+                  className={`w-full h-full flex items-center justify-center ${activeTestimonial.bgColor} text-white text-8xl font-black font-serif`}
+                >
                   {activeTestimonial.initial}
                 </div>
               )}
@@ -732,23 +704,23 @@ export default function App() {
                 {activeTestimonial.name}
               </h2>
 
-              <div className="flex gap-1 mt-2 mb-2 text-red-500 text-xl">
-                ★★★★★
-              </div>
+              <div className="flex gap-1 mt-2 mb-2 text-red-500 text-xl">★★★★★</div>
 
               <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-6">
                 {activeTestimonial.role}
               </p>
 
               <div className="bg-white p-8 rounded-2xl border border-gray-200 text-gray-700 text-lg leading-relaxed relative shadow-sm">
-                <span className="text-6xl text-red-200 font-serif leading-none absolute top-4 left-4 select-none">"</span>
+                <span className="text-6xl text-red-200 font-serif leading-none absolute top-4 left-4 select-none">
+                  "
+                </span>
                 <p className="relative z-10 font-medium italic">{activeTestimonial.text}</p>
               </div>
             </motion.div>
 
             <div className="flex items-center gap-4 mt-8">
-              <button 
-                onClick={handlePrevTestimonial} 
+              <button
+                onClick={handlePrevTestimonial}
                 className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-colors text-gray-600 font-bold text-xl"
               >
                 &#8592;
@@ -758,12 +730,14 @@ export default function App() {
                   <button
                     key={index}
                     onClick={() => setCurrentTestimonial(index)}
-                    className={`h-2.5 rounded-full transition-all ${index === currentTestimonial ? "bg-red-600 w-8" : "bg-gray-300 w-2.5 hover:bg-red-300"}`}
+                    className={`h-2.5 rounded-full transition-all ${
+                      index === currentTestimonial ? "bg-red-600 w-8" : "bg-gray-300 w-2.5 hover:bg-red-300"
+                    }`}
                   />
                 ))}
               </div>
-              <button 
-                onClick={handleNextTestimonial} 
+              <button
+                onClick={handleNextTestimonial}
                 className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-md border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-colors text-gray-600 font-bold text-xl"
               >
                 &#8594;
@@ -773,7 +747,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* 7. FAQ SECTION */}
+      {/* 7. FAQ */}
       <section className="py-24 bg-white border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -787,7 +761,12 @@ export default function App() {
             {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
-                <div key={index} className={`border rounded-xl bg-gray-50 overflow-hidden transition-colors ${isOpen ? "border-red-600 shadow-md bg-white" : "border-gray-200"}`}>
+                <div
+                  key={index}
+                  className={`border rounded-xl bg-gray-50 overflow-hidden transition-colors ${
+                    isOpen ? "border-red-600 shadow-md bg-white" : "border-gray-200"
+                  }`}
+                >
                   <div
                     className="flex justify-between items-center px-6 py-5 cursor-pointer hover:bg-white"
                     onClick={() => toggle(index)}
@@ -795,11 +774,19 @@ export default function App() {
                     <p className={`font-bold text-sm md:text-base pr-4 ${isOpen ? "text-red-600" : "text-gray-800"}`}>
                       {faq.question}
                     </p>
-                    <div className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-full transition-transform duration-300 font-bold ${isOpen ? "bg-red-600 text-white rotate-45" : "bg-gray-200 text-gray-600"}`}>
+                    <div
+                      className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-full transition-transform duration-300 font-bold ${
+                        isOpen ? "bg-red-600 text-white rotate-45" : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
                       +
                     </div>
                   </div>
-                  <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                  <div
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
                     <div className="overflow-hidden">
                       <p className="px-6 pb-5 text-gray-600 text-sm leading-relaxed border-t border-gray-100 pt-4">
                         {faq.answer}
@@ -812,7 +799,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }
